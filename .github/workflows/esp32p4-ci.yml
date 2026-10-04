@@ -33,7 +33,6 @@ jobs:
         shell: bash
         run: |
           . $IDF_PATH/export.sh
-          idf.py set-target esp32p4
           idf.py build
 
       - name: Verify build artifacts

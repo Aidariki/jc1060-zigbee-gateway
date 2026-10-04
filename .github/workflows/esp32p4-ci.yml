@@ -1,0 +1,56 @@
+name: ESP32-P4 CI Build
+
+on:
+  push:
+      branches:
+            - main
+                  - 'feature/**'
+                    pull_request:
+                        branches:
+                              - main
+                                workflow_dispatch:
+
+                                permissions:
+                                  contents: read
+
+                                  jobs:
+                                    build:
+                                        name: Build ESP32-P4 Firmware
+                                            runs-on: ubuntu-latest
+                                                container:
+                                                      image: espressif/idf:v5.5.0
+                                                          steps:
+                                                                - name: Checkout repository
+                                                                        uses: actions/checkout@v4
+                                                                                with:
+                                                                                          submodules: recursive
+                                                                                                    fetch-depth: 1
+                                                                                                    
+                                                                                                          - name: Configure safe directory
+                                                                                                                  run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+                                                                                                                  
+                                                                                                                        - name: Build firmware with ESP-IDF
+                                                                                                                                shell: bash
+                                                                                                                                        run: |
+                                                                                                                                                  . $IDF_PATH/export.sh
+                                                                                                                                                            idf.py set-target esp32p4
+                                                                                                                                                                      idf.py build
+                                                                                                                                                                      
+                                                                                                                                                                            - name: Verify build artifacts
+                                                                                                                                                                                    shell: bash
+                                                                                                                                                                                            run: |
+                                                                                                                                                                                                      echo "Checking generated binaries..."
+                                                                                                                                                                                                                ls -la build/*.bin
+                                                                                                                                                                                                                          test -f build/bootloader/bootloader.bin
+                                                                                                                                                                                                                                    test -f build/partition_table/partition-table.bin
+                                                                                                                                                                                                                                    
+                                                                                                                                                                                                                                          - name: Upload build artifacts
+                                                                                                                                                                                                                                                  uses: actions/upload-artifact@v4
+                                                                                                                                                                                                                                                          with:
+                                                                                                                                                                                                                                                                    name: esp32p4-firmware-${{ github.sha }}
+                                                                                                                                                                                                                                                                              path: |
+                                                                                                                                                                                                                                                                                          build/*.bin
+                                                                                                                                                                                                                                                                                                      build/bootloader/bootloader.bin
+                                                                                                                                                                                                                                                                                                                  build/partition_table/partition-table.bin
+                                                                                                                                                                                                                                                                                                                              build/flasher_args.json
+                                                                                                                                                                                                                                                                                                                                        if-no-files-found: error
